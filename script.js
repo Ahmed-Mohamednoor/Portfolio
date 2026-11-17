@@ -33,7 +33,7 @@ document.addEventListener('click', event => {
   if (!event.target.closest('header')) closeMenu();
 });
 window.matchMedia('(max-width: 800px)').addEventListener('change', closeMenu);
-// Auto follows device settings live; visitors can also select Light or Dark.
+// Follow device settings until the visitor chooses a light or dark override.
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 const themeModes = ['system', 'light', 'dark'];
 let themeMode = 'system';
@@ -44,10 +44,8 @@ try {
 function applyTheme() {
   const theme = themeMode === 'system' ? (systemTheme.matches ? 'dark' : 'light') : themeMode;
   root.dataset.theme = theme;
-  const current = themeMode === 'system' ? 'Auto' : themeMode === 'light' ? 'Light' : 'Dark';
-  const next = themeModes[(themeModes.indexOf(themeMode) + 1) % themeModes.length];
-  themeButton.textContent = current;
-  const label = `Theme: ${current} (${theme}). Switch to ${next === 'system' ? 'device setting' : next + ' theme'}`;
+  themeButton.textContent = '◐';
+  const label = `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`;
   themeButton.setAttribute('aria-label', label);
   themeButton.title = label;
   document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f5f3ee' : '#18231f';
@@ -57,7 +55,7 @@ systemTheme.addEventListener('change', () => {
   if (themeMode === 'system') applyTheme();
 });
 themeButton.addEventListener('click', () => {
-  themeMode = themeModes[(themeModes.indexOf(themeMode) + 1) % themeModes.length];
+  themeMode = root.dataset.theme === 'dark' ? 'light' : 'dark';
   applyTheme();
   try { localStorage.setItem('ahmed-theme-preference', themeMode); } catch {}
 });
