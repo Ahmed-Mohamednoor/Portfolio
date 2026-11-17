@@ -33,20 +33,33 @@ document.addEventListener('click', event => {
   if (!event.target.closest('header')) closeMenu();
 });
 window.matchMedia('(max-width: 800px)').addEventListener('change', closeMenu);
-function setTheme(theme) {
+// Auto follows device settings live; visitors can also select Light or Dark.
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+const themeModes = ['system', 'light', 'dark'];
+let themeMode = 'system';
+try {
+  const stored = localStorage.getItem('ahmed-theme-preference');
+  if (themeModes.includes(stored)) themeMode = stored;
+} catch { /* Storage is optional. */ }
+function applyTheme() {
+  const theme = themeMode === 'system' ? (systemTheme.matches ? 'dark' : 'light') : themeMode;
   root.dataset.theme = theme;
-  const label = `Switch to ${theme === 'light' ? 'dark' : 'light'} theme`;
+  const current = themeMode === 'system' ? 'Auto' : themeMode === 'light' ? 'Light' : 'Dark';
+  const next = themeModes[(themeModes.indexOf(themeMode) + 1) % themeModes.length];
+  themeButton.textContent = current;
+  const label = `Theme: ${current} (${theme}). Switch to ${next === 'system' ? 'device setting' : next + ' theme'}`;
   themeButton.setAttribute('aria-label', label);
   themeButton.title = label;
   document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f5f3ee' : '#18231f';
 }
-let savedTheme;
-try { savedTheme = localStorage.getItem('ahmed-theme'); } catch { /* Optional storage. */ }
-setTheme(savedTheme === 'dark' ? 'dark' : 'light');
+applyTheme();
+systemTheme.addEventListener('change', () => {
+  if (themeMode === 'system') applyTheme();
+});
 themeButton.addEventListener('click', () => {
-  const theme = root.dataset.theme === 'light' ? 'dark' : 'light';
-  setTheme(theme);
-  try { localStorage.setItem('ahmed-theme', theme); } catch { /* Works for this visit. */ }
+  themeMode = themeModes[(themeModes.indexOf(themeMode) + 1) % themeModes.length];
+  applyTheme();
+  try { localStorage.setItem('ahmed-theme-preference', themeMode); } catch {}
 });
 const sections = [...document.querySelectorAll('main > section[id]')];
 const navLinks = [...nav.querySelectorAll('a')];
@@ -74,22 +87,6 @@ window.addEventListener('resize', requestScrollUpdate);
 window.addEventListener('load', updateScroll);
 document.querySelectorAll('details').forEach(detail => detail.addEventListener('toggle', requestScrollUpdate));
 updateScroll();
-const filters = document.querySelector('.skill-filters');
-filters.hidden = false;
-filters.addEventListener('click', event => {
-  const button = event.target.closest('button[data-filter]');
-  if (!button) return;
-  filters.querySelectorAll('button').forEach(item => {
-    const selected = item === button;
-    item.classList.toggle('selected', selected);
-    item.setAttribute('aria-pressed', String(selected));
-  });
-  document.querySelectorAll('.skill-group').forEach(group => {
-    group.hidden = button.dataset.filter !== 'All' && group.dataset.category !== button.dataset.filter;
-  });
-  document.querySelector('#filter-status').textContent = button.dataset.filter === 'All' ? 'Showing all skill categories.' : `Showing ${button.dataset.filter} skills.`;
-  requestScrollUpdate();
-});
 if ('IntersectionObserver' in window && !motion.matches) {
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
